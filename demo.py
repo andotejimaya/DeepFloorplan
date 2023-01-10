@@ -43,9 +43,11 @@ def ind2rgb(ind_im, color_map=floorplan_map):
 def main(args):
 	# load input
 	im = Image.open(args.im_path)
-	im = np.asarray(im)
-	im = np.array(Image.fromarray(im).resize((512,512))) / 255.
-
+	imOrg = np.asarray(im)
+	im = np.array(Image.fromarray(imOrg).resize((512,512))) / 255.
+  
+	h = imOrg.shape[0]  
+	w = imOrg.shape[1]
 	# create tensorflow session
 	with tf.compat.v1.Session() as sess:
 		
@@ -61,7 +63,7 @@ def main(args):
 		graph = tf.compat.v1.get_default_graph()
 
 		# restore inputs & outpus tensor
-		x = graph.get_tensor_by_name('inputs:0')
+		x = graph.get_tensor_by_name('inputs:0') # モデルが 512x512 で決まっているぽい
 		room_type_logit = graph.get_tensor_by_name('Cast:0')
 		room_boundary_logit = graph.get_tensor_by_name('Cast_1:0')
 
@@ -76,12 +78,12 @@ def main(args):
 		floorplan[room_boundary==2] = 10
 		floorplan_rgb = ind2rgb(floorplan)
 
-		# plot results
-		plt.subplot(121)
-		plt.imshow(im)
-		plt.subplot(122)
-		plt.imshow(floorplan_rgb/255.)
-		plt.show()
+	# plot results
+	plt.subplot(121)
+	plt.imshow(imOrg) # 元画像
+	plt.subplot(122)
+	plt.imshow(Image.fromarray(floorplan_rgb.astype(np.uint8)).resize((w,h))) # 判定後画像。uintの配列にしないとresizeできない
+	plt.show()
 
 if __name__ == '__main__':
 	FLAGS, unparsed = parser.parse_known_args()
